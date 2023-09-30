@@ -1,5 +1,6 @@
 package util;
 
+import java.awt.event.KeyEvent;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -9,6 +10,8 @@ import java.util.List;
 import java.util.Scanner;
 import java.io.File;
 import java.io.FileInputStream;
+
+import static java.lang.Integer.parseInt;
 
 public class Request {
     private String bdPath;
@@ -63,12 +66,16 @@ public class Request {
             throw new RuntimeException(e);
         }
     }
+
+    private void Error() {
+        System.out.println("You entered the wrong command");
+    }
     public void action() throws IOException {
+        if (this.requestInfo.length == 1 && this.nameDB.isEmpty()) {
+            Error();
+            return;
+        }
         if (this.requestInfo[0].equals("open")) {
-            if (requestInfo.length == 1) {
-                this.changeBd = true;
-                return;
-            }
             this.nameDB = "";
             this.bdPath = "";
             File dir = new File("Tabels");
@@ -81,6 +88,7 @@ public class Request {
                     this.changeBd = false;
                     this.bdPath = lst.get(i).toString();
                     this.nameColBD = firstLine().replace(',', ' ');
+                    cls();
                     return;
                 }
             }
@@ -88,7 +96,9 @@ public class Request {
             return;
         } else if (this.requestInfo[0].equals("create")) {
             Path dir = Files.createDirectories(Paths.get("Tabels"));
-            OutputStream out = Files.newOutputStream(dir.resolve(this.requestInfo[0] + ".txt"));
+            OutputStream out = Files.newOutputStream(dir.resolve(this.requestInfo[1] + ".txt"));
+            this.bdPath = "Tabels/" + this.requestInfo[1] + ".txt";
+            this.nameDB = this.requestInfo[1];
             Scanner newIn = new Scanner(System.in);
             System.out.println("You need name table col");
             String col = "id," + String.join(",", newIn.nextLine().split(" "));
@@ -102,6 +112,8 @@ public class Request {
             }
             System.out.println("BD was created");
             this.nameColBD = firstLine().replace(',', ' ');
+            cls();
+            return;
         }
         this.changeBd = true;
     }
@@ -112,7 +124,6 @@ public class Request {
             System.out.println("Do not have this BD");
             return;
         }
-        cls();
         if (this.requestInfo[0].equals("add")) {
             add();
         } else if (this.requestInfo[0].equals("delete")) {
@@ -121,6 +132,8 @@ public class Request {
             edit();
         } else if (this.requestInfo[0].equals("show")) {
             show();
+        } else if (this.requestInfo[0].equals("copy")) {
+
         } else {
             System.out.println("Not find BD");
         }
@@ -146,7 +159,52 @@ public class Request {
     }
 
     private void delete() {
+        try {
+            File inFile = new File(this.bdPath);
 
+            if (!inFile.isFile()) {
+                System.out.println("Parameter is not an existing file");
+                return;
+            }
+
+            //Construct the new file that will later be renamed to the original filename.
+            File tempFile = new File(inFile.getAbsolutePath() + ".tmp");
+
+            BufferedReader br = new BufferedReader(new FileReader(file));
+            PrintWriter pw = new PrintWriter(new FileWriter(tempFile));
+
+            String line = null;
+
+            //Read from the original file and write to the new
+            //unless content matches data to be removed.
+            while ((line = br.readLine()) != null) {
+
+                if (!line.trim().equals(lineToRemove)) {
+
+                    pw.println(line);
+                    pw.flush();
+                }
+            }
+            pw.close();
+            br.close();
+
+            //Delete the original file
+            if (!inFile.delete()) {
+                System.out.println("Could not delete file");
+                return;
+            }
+
+            //Rename the new file to the filename the original file had.
+            if (!tempFile.renameTo(inFile))
+                System.out.println("Could not rename file");
+
+        }
+        catch (FileNotFoundException ex) {
+            ex.printStackTrace();
+        }
+        catch (IOException ex) {
+            ex.printStackTrace();
+        }
     }
 
     private void edit() {
@@ -154,6 +212,18 @@ public class Request {
     }
 
     private void show() {
+        final File file = new File(this.bdPath);
+        try {
+            final LineNumberReader lnr = new LineNumberReader(new FileReader(file));
+            System.out.println();
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void copy(String path) {
 
     }
 
