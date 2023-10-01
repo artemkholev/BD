@@ -7,6 +7,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Scanner;
 import java.io.File;
 import java.io.FileInputStream;
@@ -159,52 +160,52 @@ public class Request {
     }
 
     private void delete() {
-        try {
-            File inFile = new File(this.bdPath);
-
-            if (!inFile.isFile()) {
-                System.out.println("Parameter is not an existing file");
-                return;
-            }
-
-            //Construct the new file that will later be renamed to the original filename.
-            File tempFile = new File(inFile.getAbsolutePath() + ".tmp");
-
-            BufferedReader br = new BufferedReader(new FileReader(file));
-            PrintWriter pw = new PrintWriter(new FileWriter(tempFile));
-
-            String line = null;
-
-            //Read from the original file and write to the new
-            //unless content matches data to be removed.
-            while ((line = br.readLine()) != null) {
-
-                if (!line.trim().equals(lineToRemove)) {
-
-                    pw.println(line);
-                    pw.flush();
-                }
-            }
-            pw.close();
-            br.close();
-
-            //Delete the original file
-            if (!inFile.delete()) {
-                System.out.println("Could not delete file");
-                return;
-            }
-
-            //Rename the new file to the filename the original file had.
-            if (!tempFile.renameTo(inFile))
-                System.out.println("Could not rename file");
-
-        }
-        catch (FileNotFoundException ex) {
-            ex.printStackTrace();
-        }
-        catch (IOException ex) {
-            ex.printStackTrace();
-        }
+//        try {
+//            File inFile = new File(this.bdPath);
+//
+//            if (!inFile.isFile()) {
+//                System.out.println("Parameter is not an existing file");
+//                return;
+//            }
+//
+//            //Construct the new file that will later be renamed to the original filename.
+//            File tempFile = new File(inFile.getAbsolutePath() + ".tmp");
+//
+//            BufferedReader br = new BufferedReader(new FileReader(file));
+//            PrintWriter pw = new PrintWriter(new FileWriter(tempFile));
+//
+//            String line = null;
+//
+//            //Read from the original file and write to the new
+//            //unless content matches data to be removed.
+//            while ((line = br.readLine()) != null) {
+//
+//                if (!line.trim().equals(lineToRemove)) {
+//
+//                    pw.println(line);
+//                    pw.flush();
+//                }
+//            }
+//            pw.close();
+//            br.close();
+//
+//            //Delete the original file
+//            if (!inFile.delete()) {
+//                System.out.println("Could not delete file");
+//                return;
+//            }
+//
+//            //Rename the new file to the filename the original file had.
+//            if (!tempFile.renameTo(inFile))
+//                System.out.println("Could not rename file");
+//
+//        }
+//        catch (FileNotFoundException ex) {
+//            ex.printStackTrace();
+//        }
+//        catch (IOException ex) {
+//            ex.printStackTrace();
+//        }
     }
 
     private void edit() {
@@ -212,10 +213,30 @@ public class Request {
     }
 
     private void show() {
+        int start = 0;
+        Integer count = Integer.MAX_VALUE;
+        if (this.requestInfo.length == 2) {
+            count = Integer.parseInt(this.requestInfo[1]);
+        } else if (this.requestInfo.length == 3) {
+            count = Integer.parseInt(this.requestInfo[1]);
+            start = Integer.parseInt(this.requestInfo[2]);
+        }
         final File file = new File(this.bdPath);
+        Scanner newIn = new Scanner(System.in);
+
         try {
             final LineNumberReader lnr = new LineNumberReader(new FileReader(file));
-            System.out.println();
+            while (lnr.getLineNumber() != start) {
+                lnr.readLine();
+            }
+            String str = lnr.readLine();
+            while (str != null && Objects.equals(newIn.next(), "next")) {
+                for (int i = 0; i < count && str != null; i++) {
+                    System.out.println(str.replace(',', ' '));
+                    str = lnr.readLine();
+                }
+            }
+            System.out.println("Not data. It is all");
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {
