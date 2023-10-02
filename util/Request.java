@@ -134,7 +134,7 @@ public class Request {
         } else if (this.requestInfo[0].equals("show")) {
             show();
         } else if (this.requestInfo[0].equals("copy")) {
-
+            copy();
         } else {
             System.out.println("Not find BD");
         }
@@ -218,7 +218,14 @@ public class Request {
                     System.out.println("Found data: " + line.replace(",", " "));
                     if (newIn.nextLine().equals("yes")) {
                         String rep = line.substring(line.indexOf(',') + 1);
-                        String newLine = newIn.nextLine().replace(' ', ',');
+                        String newLine = null;
+                        while (true) {
+                            newLine = newIn.nextLine().replace(' ', ',');
+                            if (fileLine(newLine) == 0) {
+                                break;
+                            }
+                            System.out.println("Inforamtion there is");
+                        }
                         line = line.replace(rep, newLine);
                         writer.println(line);
                         System.out.println("Was edited");
@@ -270,8 +277,26 @@ public class Request {
         }
     }
 
-    private void copy(String path) {
-
+    private void copy() {
+        try(FileWriter writer = new FileWriter(this.bdPath, true)) {
+            String charset = "UTF-8";
+            File file = new File("copyData/" + this.requestInfo[1] + ".txt");
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), charset));
+            int id = getId();
+            for (String line; (line = reader.readLine()) != null;) {
+                if (fileLine("," + line.replace(' ', ',')) != 0) {
+                    continue;
+                }
+                line = id++ + "," + line.replace(' ', ',') + '\n';
+                writer.write(line);
+            }
+            System.out.println("Data was added in table " + this.nameDB);
+            writer.flush();
+            reader.close();
+        }
+        catch(IOException ex){
+            System.out.println(ex.getMessage());
+        }
     }
 
     private void cls() {
