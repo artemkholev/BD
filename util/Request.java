@@ -160,56 +160,82 @@ public class Request {
     }
 
     private void delete() {
-//        try {
-//            File inFile = new File(this.bdPath);
-//
-//            if (!inFile.isFile()) {
-//                System.out.println("Parameter is not an existing file");
-//                return;
-//            }
-//
-//            //Construct the new file that will later be renamed to the original filename.
-//            File tempFile = new File(inFile.getAbsolutePath() + ".tmp");
-//
-//            BufferedReader br = new BufferedReader(new FileReader(file));
-//            PrintWriter pw = new PrintWriter(new FileWriter(tempFile));
-//
-//            String line = null;
-//
-//            //Read from the original file and write to the new
-//            //unless content matches data to be removed.
-//            while ((line = br.readLine()) != null) {
-//
-//                if (!line.trim().equals(lineToRemove)) {
-//
-//                    pw.println(line);
-//                    pw.flush();
-//                }
-//            }
-//            pw.close();
-//            br.close();
-//
-//            //Delete the original file
-//            if (!inFile.delete()) {
-//                System.out.println("Could not delete file");
-//                return;
-//            }
-//
-//            //Rename the new file to the filename the original file had.
-//            if (!tempFile.renameTo(inFile))
-//                System.out.println("Could not rename file");
-//
-//        }
-//        catch (FileNotFoundException ex) {
-//            ex.printStackTrace();
-//        }
-//        catch (IOException ex) {
-//            ex.printStackTrace();
-//        }
+        this.requestInfo[0] = "";
+        String infoForDelete = null;
+        if (this.requestInfo.length == 2) {
+            infoForDelete = this.requestInfo[1] + ",";
+        } else {
+            infoForDelete = String.join(",", this.requestInfo);
+        }
+
+
+        Scanner newIn = new Scanner(System.in);
+        try {
+            String charset = "UTF-8";
+            File file = new File(this.bdPath);
+            File temp = File.createTempFile(this.nameDB, ".txt", file.getParentFile());
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), charset));
+            PrintWriter writer = new PrintWriter(new OutputStreamWriter(new FileOutputStream(temp), charset));
+            for (String line; (line = reader.readLine()) != null;) {
+                if (line.contains(infoForDelete)) {
+                    System.out.println("Found data: " + line.replace(",", " "));
+                    if (newIn.next().equals("yes")) {
+                        System.out.println("Was deleted");
+                        continue;
+                    }
+                }
+                writer.println(line);
+            }
+            reader.close();
+            writer.close();
+            file.delete();
+            temp.renameTo(file);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void edit() {
+        this.requestInfo[0] = "";
+        String infoForEdit = null;
+        if (this.requestInfo.length == 2) {
+            infoForEdit = this.requestInfo[1] + ",";
+        } else {
+            infoForEdit = String.join(",", this.requestInfo);
+        }
 
+        Scanner newIn = new Scanner(System.in);
+        try {
+            String charset = "UTF-8";
+            File file = new File(this.bdPath);
+            File temp = File.createTempFile(this.nameDB, ".txt", file.getParentFile());
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), charset));
+            PrintWriter writer = new PrintWriter(new OutputStreamWriter(new FileOutputStream(temp), charset));
+            for (String line; (line = reader.readLine()) != null;) {
+                if (line.contains(infoForEdit)) {
+                    System.out.println("Found data: " + line.replace(",", " "));
+                    if (newIn.nextLine().equals("yes")) {
+                        String rep = line.substring(line.indexOf(',') + 1);
+                        String newLine = newIn.nextLine().replace(' ', ',');
+                        line = line.replace(rep, newLine);
+                        writer.println(line);
+                        System.out.println("Was edited");
+                        continue;
+                    }
+                }
+                writer.println(line);
+            }
+            reader.close();
+            writer.close();
+            file.delete();
+            temp.renameTo(file);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void show() {

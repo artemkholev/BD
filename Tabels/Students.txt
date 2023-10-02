@@ -1,3 +1,3 @@
-id,name,sername
-1,Artem,Kholev
-2,Anton,Pronin
+id,name,surname
+1,a,b
+2,artem,kholev
