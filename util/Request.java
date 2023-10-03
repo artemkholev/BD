@@ -1,6 +1,5 @@
 package util;
 
-import java.awt.event.KeyEvent;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,12 +10,13 @@ import java.util.Objects;
 import java.util.Scanner;
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static java.lang.Integer.parseInt;
 
 public class Request {
-    private String bdPath;
-    private String nameDB;
+    private String bdPath = "";
+    private String nameDB = "";
     private String nameColBD = "";
     public String[] requestInfo;
     public boolean changeBd = false;
@@ -72,14 +72,10 @@ public class Request {
         System.out.println("You entered the wrong command");
     }
     public void action() throws IOException {
-        if (this.requestInfo.length == 1 && this.nameDB.isEmpty()) {
-            Error();
-            return;
-        }
         if (this.requestInfo[0].equals("open")) {
             this.nameDB = "";
             this.bdPath = "";
-            File dir = new File("Tabels");
+            File dir = new File("Tables");
             File[] arrFiles = dir.listFiles();
             List<File> lst = Arrays.asList(arrFiles);
             for (int i = 0; i < lst.size(); i++) {
@@ -96,13 +92,14 @@ public class Request {
             System.out.println("Table not open, you cannot use function DB, DB not found");
             return;
         } else if (this.requestInfo[0].equals("create")) {
-            Path dir = Files.createDirectories(Paths.get("Tabels"));
+            String path = "Tables";
+            Path dir = Files.createDirectories(Paths.get(path));
             OutputStream out = Files.newOutputStream(dir.resolve(this.requestInfo[1] + ".txt"));
-            this.bdPath = "Tabels/" + this.requestInfo[1] + ".txt";
+            this.bdPath = path + "/" + this.requestInfo[1] + ".txt";
             this.nameDB = this.requestInfo[1];
             Scanner newIn = new Scanner(System.in);
             System.out.println("You need name table col");
-            String col = "id," + String.join(",", newIn.nextLine().split(" "));
+            String col = this.requestInfo.length == 3 ? "" : "id," + String.join(",", newIn.nextLine().split(" "));
             try(FileWriter writer = new FileWriter(this.bdPath, false)) {
                 writer.write(String.join(",", col) + '\n');
                 System.out.println("Col was added in BD " + this.nameDB);
@@ -119,12 +116,8 @@ public class Request {
         this.changeBd = true;
     }
 
-    public void whatDo() {
+    public void whatDo() throws IOException {
         if (!this.changeBd) return;
-        if (this.bdPath.isEmpty()) {
-            System.out.println("Do not have this BD");
-            return;
-        }
         if (this.requestInfo[0].equals("add")) {
             add();
         } else if (this.requestInfo[0].equals("delete")) {
@@ -135,8 +128,11 @@ public class Request {
             show();
         } else if (this.requestInfo[0].equals("copy")) {
             copy();
+        } else if (this.requestInfo[0].equals("gTesting")) {
+            generateTesting();
         } else {
-            System.out.println("Not find BD");
+            System.out.println("Not find BD or");
+            Error();
         }
     }
 
@@ -293,6 +289,32 @@ public class Request {
             System.out.println("Data was added in table " + this.nameDB);
             writer.flush();
             reader.close();
+        }
+        catch(IOException ex){
+            System.out.println(ex.getMessage());
+        }
+    }
+
+    private void generateTesting() throws IOException {
+        String charset = "UTF-8";
+        String path = "TablesResult",
+               nameFile = "testing_table.txt",
+               col = "student_id,variant_id\n";
+        Path dir = Files.createDirectories(Paths.get(path));
+        OutputStream out = Files.newOutputStream(dir.resolve(nameFile));
+        try(FileWriter writer = new FileWriter(path + "/" + nameFile, false)) {
+            writer.write(col);
+            File fileOne = new File("Tables/Students.txt");
+            List<String> result = Files.readAllLines(Paths.get("Tables/Variants.txt"));
+            result.remove(0);
+            BufferedReader readerOne = new BufferedReader(new InputStreamReader(new FileInputStream(fileOne), charset));
+            readerOne.readLine();
+            for (String line; (line = readerOne.readLine()) != null;) {
+                line = line.substring(0, line.indexOf(',')) + "," + result.get(ThreadLocalRandom.current().nextInt(0, result.size()-1)).substring(0, line.indexOf(',')) + '\n';
+                writer.write(line);
+            }
+            writer.flush();
+            System.out.println("testing_table was created");
         }
         catch(IOException ex){
             System.out.println(ex.getMessage());
