@@ -12,9 +12,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static java.lang.Integer.parseInt;
-
 public class Request {
+    private String folderBD = "Tables";
     private String bdPath = "";
     private String nameDB = "";
     private String nameColBD = "";
@@ -22,6 +21,22 @@ public class Request {
     public boolean changeBd = false;
 
     //helps methods
+    private void open() {
+
+    }
+
+    private int showBD() {
+        int count = 0;
+        System.out.println("You can open bd:");
+        File dir = new File(this.folderBD);
+        File[] arrFiles = dir.listFiles();
+        List<File> lst = Arrays.asList(arrFiles);
+        for (File str : lst) {
+            count++;
+            System.out.println(str.toString().substring(str.toString().indexOf('/') + 1, str.toString().indexOf('.')));
+        }
+        return count;
+    }
     private int getId() {
         String filePath = this.bdPath;
         int count = 0;
@@ -75,33 +90,34 @@ public class Request {
         if (this.requestInfo[0].equals("open")) {
             this.nameDB = "";
             this.bdPath = "";
-            File dir = new File("Tables");
-            File[] arrFiles = dir.listFiles();
-            List<File> lst = Arrays.asList(arrFiles);
-            for (int i = 0; i < lst.size(); i++) {
-                if (lst.get(i).toString().contains(this.requestInfo[1] + ".")) {
-                    this.nameDB = this.requestInfo[1];
-                    System.out.println("Table open, you can use function DB");
-                    this.changeBd = false;
-                    this.bdPath = lst.get(i).toString();
-                    this.nameColBD = firstLine().replace(',', ' ');
-                    cls();
-                    return;
-                }
+            int countBd = showBD();
+
+            if (countBd > 0) {
+                Scanner inNew = new Scanner(System.in);
+                String openBdName = inNew.next();
+                this.nameDB = openBdName;
+                this.changeBd = false;
+                this.bdPath = this.folderBD + "/" + openBdName + ".txt";
+                this.nameColBD = firstLine().replace(',', ' ');
+                System.out.println("BD open, you can use function");
+                return;
             }
-            System.out.println("Table not open, you cannot use function DB, DB not found");
+            System.out.println("Table not open, DB not found!!!");
             return;
         } else if (this.requestInfo[0].equals("create")) {
-            String path = "Tables";
-            Path dir = Files.createDirectories(Paths.get(path));
-            OutputStream out = Files.newOutputStream(dir.resolve(this.requestInfo[1] + ".txt"));
-            this.bdPath = path + "/" + this.requestInfo[1] + ".txt";
-            this.nameDB = this.requestInfo[1];
-            Scanner newIn = new Scanner(System.in);
-            System.out.println("You need name table col");
-            String col = this.requestInfo.length == 3 ? "" : "id," + String.join(",", newIn.nextLine().split(" "));
+            Scanner inNew = new Scanner(System.in);
+            System.out.println("Enter name BD");
+            this.nameDB = inNew.nextLine();
+            Path dir = Files.createDirectories(Paths.get(this.folderBD));
+            OutputStream out = Files.newOutputStream(dir.resolve(this.nameDB + ".txt"));
+            this.bdPath = this.folderBD + "/" + this.nameDB + ".txt";
+            this.changeBd = false;
+
+            System.out.println("Need name table col");
+            String col = "id," + String.join(",", inNew.nextLine().split(" "));
+            this.nameColBD = col.replace(',', ' ');
             try(FileWriter writer = new FileWriter(this.bdPath, false)) {
-                writer.write(String.join(",", col) + '\n');
+                writer.write(col + '\n');
                 System.out.println("Col was added in BD " + this.nameDB);
                 writer.flush();
             }
@@ -109,7 +125,6 @@ public class Request {
                 System.out.println(ex.getMessage());
             }
             System.out.println("BD was created");
-            this.nameColBD = firstLine().replace(',', ' ');
             cls();
             return;
         }
@@ -130,6 +145,8 @@ public class Request {
             copy();
         } else if (this.requestInfo[0].equals("gTesting")) {
             generateTesting();
+        } else if (this.requestInfo[0].equals("gTesting+")) {
+            generateTestingForTeacher();
         } else {
             System.out.println("Not find BD or");
             Error();
@@ -315,6 +332,53 @@ public class Request {
             }
             writer.flush();
             System.out.println("testing_table was created");
+        }
+        catch(IOException ex){
+            System.out.println(ex.getMessage());
+        }
+    }
+
+    private void generateTestingForTeacher() throws IOException {
+        String testing_table_path = "TablesResult/testing_table.txt",
+               bdStudents = "Tables/Students.txt",
+               bdVariants = "Tables/Variants.txt";
+
+        String charset = "UTF-8";
+        String path = "TablesResult",
+                nameFile = "testing_table_for_teacher.txt",
+                col = "full_name,path_to_file,mark\n";
+        Path dir = Files.createDirectories(Paths.get(path));
+        OutputStream out = Files.newOutputStream(dir.resolve(nameFile));
+
+        try(FileWriter writer = new FileWriter(path + "/" + nameFile, false)) {
+            writer.write(col);
+            File testing_table = new File(testing_table_path);
+            List<String> resultUsers = Files.readAllLines(Paths.get(bdStudents));
+            List<String> resultVariants = Files.readAllLines(Paths.get(bdVariants));
+            resultUsers.remove(0); resultVariants.remove(0);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(testing_table), charset));
+            reader.readLine();
+
+            for (String line; (line = reader.readLine()) != null;) {
+                String idUser = line.substring(0, line.indexOf(',') + 1);
+                String idVariant = line.substring(line.indexOf(',') + 1, line.length()) + ",";
+                String newString = "";
+
+                for (String strTables : resultUsers) {
+                    if (strTables.contains(idUser)) {
+                        newString = strTables.substring(strTables.indexOf(','), strTables.length()).replace(',', ' ')  + ",";
+                        break;
+                    }
+                }
+                for (String strTables : resultVariants) {
+                    if (strTables.contains(idVariant)) {
+                        newString += strTables.substring(strTables.indexOf(',') + 1, strTables.length()).replace(',', ' ') + ",\n";
+                    }
+                }
+                writer.write(newString);
+            }
+            writer.flush();
+            System.out.println("testing_table_for_teacher was created");
         }
         catch(IOException ex){
             System.out.println(ex.getMessage());

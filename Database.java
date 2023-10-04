@@ -9,18 +9,15 @@ public class Database {
 
         Scanner in = new Scanner(System.in);
         String inputData;
+
+        System.out.println("BD strated");
         inputData = in.nextLine();
-
-
-        if (inputData.equals("start")) {
+        while (!inputData.equals("end")) {
+            request.requestInfo = inputData.split(" ");
+            request.action();
+            request.whatDo();
+            request.changeBd = false;
             inputData = in.nextLine();
-            while (!inputData.equals("end")) {
-                request.requestInfo = inputData.split(" ");
-                request.action();
-                request.whatDo();
-                request.changeBd = false;
-                inputData = in.nextLine();
-            }
         }
         System.out.println("Program was closed.");
     }
