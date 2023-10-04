@@ -20,5 +20,6 @@ public class Database {
             inputData = in.nextLine();
         }
         System.out.println("Program was closed.");
+        in.close();
     }
 }

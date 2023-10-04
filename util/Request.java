@@ -13,7 +13,7 @@ import java.io.FileInputStream;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class Request {
-    private String folderBD = "Tables";
+    private final String folderBD = "Tables";
     private String bdPath = "";
     private String nameDB = "";
     private String nameColBD = "";
@@ -21,9 +21,6 @@ public class Request {
     public boolean changeBd = false;
 
     //helps methods
-    private void open() {
-
-    }
 
     private int showBD() {
         int count = 0;
@@ -42,12 +39,11 @@ public class Request {
         int count = 0;
 
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
+            while ((reader.readLine()) != null) {
                 count++;
             }
         } catch (IOException e) {
-            System.err.println("Ошибка при чтении файла: " + e.getMessage());
+            System.err.println("Error in reading file: " + e.getMessage());
         }
         return count;
     }
@@ -64,8 +60,6 @@ public class Request {
                  readString = lnr.readLine();
              }
              return linesCount;
-         } catch (FileNotFoundException e) {
-             throw new RuntimeException(e);
          } catch (IOException e) {
              throw new RuntimeException(e);
          }
@@ -76,8 +70,6 @@ public class Request {
         try {
             final LineNumberReader lnr = new LineNumberReader(new FileReader(file));
             return lnr.readLine();
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -109,7 +101,7 @@ public class Request {
             System.out.println("Enter name BD");
             this.nameDB = inNew.nextLine();
             Path dir = Files.createDirectories(Paths.get(this.folderBD));
-            OutputStream out = Files.newOutputStream(dir.resolve(this.nameDB + ".txt"));
+            Files.newOutputStream(dir.resolve(this.nameDB + ".txt"));
             this.bdPath = this.folderBD + "/" + this.nameDB + ".txt";
             this.changeBd = false;
 
@@ -133,23 +125,18 @@ public class Request {
 
     public void whatDo() throws IOException {
         if (!this.changeBd) return;
-        if (this.requestInfo[0].equals("add")) {
-            add();
-        } else if (this.requestInfo[0].equals("delete")) {
-            delete();
-        } else if (this.requestInfo[0].equals("edit")) {
-            edit();
-        } else if (this.requestInfo[0].equals("show")) {
-            show();
-        } else if (this.requestInfo[0].equals("copy")) {
-            copy();
-        } else if (this.requestInfo[0].equals("gTesting")) {
-            generateTesting();
-        } else if (this.requestInfo[0].equals("gTesting+")) {
-            generateTestingForTeacher();
-        } else {
-            System.out.println("Not find BD or");
-            Error();
+        switch (this.requestInfo[0]) {
+            case "add" -> add();
+            case "delete" -> delete();
+            case "edit" -> edit();
+            case "show" -> show();
+            case "copy" -> copy();
+            case "gTesting" -> generateTesting();
+            case "gTesting+" -> generateTestingForTeacher();
+            default -> {
+                System.out.println("Not find BD or");
+                Error();
+            }
         }
     }
 
@@ -157,10 +144,10 @@ public class Request {
         this.requestInfo[0] = "";
         String addString = String.join(",", this.requestInfo);
         if (fileLine(addString) != 0) {
-            System.out.println("Inforamtion there is");
+            System.out.println("Information there is");
             return;
         }
-        addString = String.valueOf(getId()) + addString + '\n';
+        addString = getId() + addString + '\n';
         try(FileWriter writer = new FileWriter(this.bdPath, true)) {
             this.requestInfo[0] = String.valueOf(getId());
             writer.write(addString);
@@ -174,7 +161,7 @@ public class Request {
 
     private void delete() {
         this.requestInfo[0] = "";
-        String infoForDelete = null;
+        String infoForDelete;
         if (this.requestInfo.length == 2) {
             infoForDelete = this.requestInfo[1] + ",";
         } else {
@@ -203,16 +190,14 @@ public class Request {
             writer.close();
             file.delete();
             temp.renameTo(file);
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     private void edit() {
+        String infoForEdit;
         this.requestInfo[0] = "";
-        String infoForEdit = null;
         if (this.requestInfo.length == 2) {
             infoForEdit = this.requestInfo[1] + ",";
         } else {
@@ -231,13 +216,13 @@ public class Request {
                     System.out.println("Found data: " + line.replace(",", " "));
                     if (newIn.nextLine().equals("yes")) {
                         String rep = line.substring(line.indexOf(',') + 1);
-                        String newLine = null;
+                        String newLine;
                         while (true) {
                             newLine = newIn.nextLine().replace(' ', ',');
                             if (fileLine(newLine) == 0) {
                                 break;
                             }
-                            System.out.println("Inforamtion there is");
+                            System.out.println("Information there is");
                         }
                         line = line.replace(rep, newLine);
                         writer.println(line);
@@ -251,8 +236,6 @@ public class Request {
             writer.close();
             file.delete();
             temp.renameTo(file);
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -260,7 +243,7 @@ public class Request {
 
     private void show() {
         int start = 0;
-        Integer count = Integer.MAX_VALUE;
+        int count = Integer.MAX_VALUE;
         if (this.requestInfo.length == 2) {
             count = Integer.parseInt(this.requestInfo[1]);
         } else if (this.requestInfo.length == 3) {
@@ -283,8 +266,6 @@ public class Request {
                 }
             }
             System.out.println("Not data. It is all");
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -318,7 +299,7 @@ public class Request {
                nameFile = "testing_table.txt",
                col = "student_id,variant_id\n";
         Path dir = Files.createDirectories(Paths.get(path));
-        OutputStream out = Files.newOutputStream(dir.resolve(nameFile));
+        Files.newOutputStream(dir.resolve(nameFile));
         try(FileWriter writer = new FileWriter(path + "/" + nameFile, false)) {
             writer.write(col);
             File fileOne = new File("Tables/Students.txt");
@@ -347,9 +328,9 @@ public class Request {
         String path = "TablesResult",
                 nameFile = "testing_table_for_teacher.txt",
                 col = "full_name,path_to_file,mark\n";
-        Path dir = Files.createDirectories(Paths.get(path));
-        OutputStream out = Files.newOutputStream(dir.resolve(nameFile));
 
+        Path dir = Files.createDirectories(Paths.get(path));
+        Files.newOutputStream(dir.resolve(nameFile));
         try(FileWriter writer = new FileWriter(path + "/" + nameFile, false)) {
             writer.write(col);
             File testing_table = new File(testing_table_path);
@@ -361,18 +342,19 @@ public class Request {
 
             for (String line; (line = reader.readLine()) != null;) {
                 String idUser = line.substring(0, line.indexOf(',') + 1);
-                String idVariant = line.substring(line.indexOf(',') + 1, line.length()) + ",";
+                String idVariant = line.substring(line.indexOf(',') + 1) + ",";
                 String newString = "";
 
                 for (String strTables : resultUsers) {
                     if (strTables.contains(idUser)) {
-                        newString = strTables.substring(strTables.indexOf(','), strTables.length()).replace(',', ' ')  + ",";
+                        newString = strTables.substring(strTables.indexOf(',')).replace(',', ' ')  + ",";
                         break;
                     }
                 }
                 for (String strTables : resultVariants) {
                     if (strTables.contains(idVariant)) {
-                        newString += strTables.substring(strTables.indexOf(',') + 1, strTables.length()).replace(',', ' ') + ",\n";
+                        newString += strTables.substring(strTables.indexOf(',') + 1).replace(',', ' ') + ",\n";
+                        break;
                     }
                 }
                 writer.write(newString);

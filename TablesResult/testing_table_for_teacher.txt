@@ -1,5 +1,9 @@
 full_name,path_to_file,mark
- a b, 3,
- a c, 4,
- n m, 2,
- k l, 3,
+ a b,4,
+ a c,2,
+ n m,2,
+ k l,2,
+ a a,2,
+ b b ,3,
+ c c,4,
+ k k,3,
