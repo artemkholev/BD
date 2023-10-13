@@ -6,6 +6,7 @@ import java.util.Scanner;
 public class Database {
     public static void main(String[] args) throws IOException {
         Request request = new Request();
+        request.testing = request.fileLen() > 1;
 
         Scanner in = new Scanner(System.in);
         String inputData;

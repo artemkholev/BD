@@ -1,9 +1,7 @@
 id,name,surname
-1,a,b
+1,aa,bb
 2,a,c
 3,n,m
 4,k,l
-5,a,a
-6,b,b,
-7,c,c
-8,k,k
+8,artem,kholev
+10,hhh,kkl

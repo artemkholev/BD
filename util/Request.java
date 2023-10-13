@@ -4,24 +4,29 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Scanner;
+import java.util.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class Request {
-    private final String folderBD = "Tables";
+    private final ArrayList<String> folders = new ArrayList<>(Arrays.asList("Tables", "TablesResult"));
+    private String folderBD = "";
     private String bdPath = "";
     private String nameDB = "";
     private String nameColBD = "";
     public String[] requestInfo;
     public boolean changeBd = false;
+    public boolean testing = false;
 
     //helps methods
 
+    private  void showFolders() {
+        System.out.println("Select a folder:");
+        for (String key : this.folders) {
+            System.out.println(key);
+        }
+    }
     private int showBD() {
         int count = 0;
         System.out.println("You can open bd:");
@@ -79,7 +84,13 @@ public class Request {
         System.out.println("You entered the wrong command");
     }
     public void action() throws IOException {
-        if (this.requestInfo[0].equals("open")) {
+        if (this.requestInfo.length == 2 && this.requestInfo[0].equals("open") && this.requestInfo[1].equals("folder")) {
+            showFolders();
+            Scanner inNew = new Scanner(System.in);
+            this.folderBD = inNew.nextLine();
+            System.out.println("You open folder " + this.folderBD);
+            return;
+        } else if (this.requestInfo[0].equals("open")) {
             this.nameDB = "";
             this.bdPath = "";
             int countBd = showBD();
@@ -119,6 +130,12 @@ public class Request {
             System.out.println("BD was created");
             cls();
             return;
+        } else if (this.requestInfo.length == 2 && this.requestInfo[0].equals("create") && this.requestInfo[1].equals("folder")) {
+            Scanner inNew = new Scanner(System.in);
+            System.out.println("Enter name folder");
+            String newFolder = inNew.nextLine();
+            this.folders.add(newFolder);
+            this.folderBD = newFolder;
         }
         this.changeBd = true;
     }
@@ -133,6 +150,7 @@ public class Request {
             case "copy" -> copy();
             case "gTesting" -> generateTesting();
             case "gTesting+" -> generateTestingForTeacher();
+            case "addMark" -> addMark();
             default -> {
                 System.out.println("Not find BD or");
                 Error();
@@ -147,12 +165,44 @@ public class Request {
             System.out.println("Information there is");
             return;
         }
-        addString = getId() + addString + '\n';
+        int id = getId();
         try(FileWriter writer = new FileWriter(this.bdPath, true)) {
-            this.requestInfo[0] = String.valueOf(getId());
-            writer.write(addString);
+            this.requestInfo[0] = String.valueOf(id);
+            writer.write(id + addString + "\n");
             System.out.println("Data was added in table " + this.nameDB);
             writer.flush();
+
+            if (this.testing) {
+                List<String> result = Files.readAllLines(Paths.get("Tables/Variants.txt"));
+                result.remove(0);
+                String idVariant = result.get(ThreadLocalRandom.current().nextInt(0, result.size()-1));
+                String filePath = "TablesResult/testing_table.txt";
+                String text = id + "," + idVariant.substring(0, idVariant.indexOf(",")) + '\n';
+
+                try {
+                    FileWriter writ = new FileWriter(filePath, true);
+                    BufferedWriter bufferWriter = new BufferedWriter(writ);
+                    bufferWriter.write(text);
+                    bufferWriter.close();
+                }
+                catch (IOException e) {
+                    System.out.println(e);
+                }
+
+
+                String filePathForTeacher = "TablesResult/testing_table_for_teacher.txt";
+                String textForTeacher = addString.substring(1) + "," + idVariant.substring(idVariant.indexOf(",") + 1) + ",\n";
+
+                try {
+                    FileWriter writ = new FileWriter(filePathForTeacher, true);
+                    BufferedWriter bufferWriter = new BufferedWriter(writ);
+                    bufferWriter.write(textForTeacher);
+                    bufferWriter.close();
+                }
+                catch (IOException e) {
+                    System.out.println(e);
+                }
+            }
         }
         catch(IOException ex){
             System.out.println(ex.getMessage());
@@ -180,6 +230,52 @@ public class Request {
                 if (line.contains(infoForDelete)) {
                     System.out.println("Found data: " + line.replace(",", " "));
                     if (newIn.next().equals("yes")) {
+                        String[] data = line.split(",");
+
+                        File file1 = new File("TablesResult/testing_table.txt");
+                        File file2 = new File("TablesResult/testing_table_for_teacher.txt");
+
+                        StringBuilder sb = new StringBuilder();
+                        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file1)))) {
+                            String strLine;
+                            while ((strLine = br.readLine()) != null) {
+                                String[] line_in_id = strLine.split(",");
+                                if (line_in_id[0].equals(data[0])) {
+                                    continue;
+                                }
+                                sb.append(strLine).append("\n");
+                            }
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                        try (FileWriter fileWriter = new FileWriter(file1)) {
+                            fileWriter.write(sb.toString());
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                        StringBuilder sb_teacher = new StringBuilder();
+                        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file2)))) {
+                            String strLine;
+                            while ((strLine = br.readLine()) != null) {
+                                String[] line_in_id = strLine.split(",");
+                                if (line_in_id[0].equals(data[1] + " " + data[2])) {
+                                    continue;
+                                }
+                                sb_teacher.append(strLine).append("\n");
+                            }
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+
+
+                        try (FileWriter fileWriter = new FileWriter(file2)) {
+                            fileWriter.write(sb_teacher.toString());
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+
                         System.out.println("Was deleted");
                         continue;
                     }
@@ -215,6 +311,7 @@ public class Request {
                 if (line.contains(infoForEdit)) {
                     System.out.println("Found data: " + line.replace(",", " "));
                     if (newIn.nextLine().equals("yes")) {
+                        String[] data = line.split(",");
                         String rep = line.substring(line.indexOf(',') + 1);
                         String newLine;
                         while (true) {
@@ -226,6 +323,28 @@ public class Request {
                         }
                         line = line.replace(rep, newLine);
                         writer.println(line);
+
+
+                        File file2 = new File("TablesResult/testing_table_for_teacher.txt");
+                        StringBuilder sb = new StringBuilder();
+                        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file2)))) {
+                            String strLine;
+                            while ((strLine = br.readLine()) != null) {
+                                if (strLine.contains(data[1] + " " + data[2])) {
+                                    sb.append(strLine.replace(data[1] + " " + data[2], newLine)).append("\n");
+                                }
+                                sb.append(strLine).append("\n");
+                            }
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                        try (FileWriter fileWriter = new FileWriter(file2)) {
+                            fileWriter.write(sb.toString());
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+
                         System.out.println("Was edited");
                         continue;
                     }
@@ -317,6 +436,7 @@ public class Request {
         catch(IOException ex){
             System.out.println(ex.getMessage());
         }
+        generateTestingForTeacher();
     }
 
     private void generateTestingForTeacher() throws IOException {
@@ -347,7 +467,7 @@ public class Request {
 
                 for (String strTables : resultUsers) {
                     if (strTables.contains(idUser)) {
-                        newString = strTables.substring(strTables.indexOf(',')).replace(',', ' ')  + ",";
+                        newString = strTables.substring(strTables.indexOf(',') + 1).replace(',', ' ')  + ",";
                         break;
                     }
                 }
@@ -364,6 +484,50 @@ public class Request {
         }
         catch(IOException ex){
             System.out.println(ex.getMessage());
+        }
+    }
+
+    private void addMark() {
+        System.out.println("Enter full name and mark using ,");
+        Scanner inNew = new Scanner(System.in);
+        String[] info = inNew.nextLine().split(",");
+        String fullName = info[0];
+        String mark  = info[1];
+        File file = new File(this.bdPath);
+
+        StringBuilder sb = new StringBuilder();
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file)))) {
+            String strLine;
+            while ((strLine = br.readLine()) != null) {
+                String[] line = strLine.split(",");
+                if (line[0].equals(fullName)) {
+                    sb.append(line[0]).append(",").append(line[1]).append(",").append(mark).append("\n");
+                    continue;
+                }
+                sb.append(strLine).append("\n");
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        try (FileWriter fileWriter = new FileWriter(file)) {
+            fileWriter.write(sb.toString());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public int fileLen() {
+        final File file = new File("TablesResult/testing_table.txt");
+        try {
+            final LineNumberReader lnr = new LineNumberReader(new FileReader(file));
+            int linesCount = 0;
+            while (lnr.readLine() != null) {
+                linesCount++;
+            }
+            return linesCount;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
