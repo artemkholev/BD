@@ -1,2 +1,0 @@
-id,name,name
-2,k,g
